@@ -1,13 +1,13 @@
 from setuptools import find_packages, setup
 
-package_dir = {'': 'src'}
+package_dir = {'': '.'}
 
 package_data = {'': ['*']}
 
 setup_kwargs = {
     'name': 'fangorn',
     'version': '0.1.0',
-    'description': 'Modeling and infering crop biomass dynamics.',
+    'description': 'The core engine of Digital Gaia.',
     'long_description': None,
     'author': 'Digital Gaia, Inc',
     'author_email': None,
