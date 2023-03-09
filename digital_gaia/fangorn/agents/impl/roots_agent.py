@@ -1,3 +1,4 @@
+from jax import jit
 from jax.scipy.stats import norm
 from digital_gaia.fangorn.ontology.v1.measurement.base.agriculture.Yield import HempYield
 from digital_gaia.fangorn.ontology.v1.genetics.base.plant.Plant import PlantSpecies
@@ -87,7 +88,7 @@ class RootsAndCultureAgent(AgentInterface):
         # Store lot information
         self.n_lots = len(self.data.project.lots)
         # TODO this should be computed based on the polygon coordinates
-        self.lot_area = jnp.array([100.] * self.n_lots)  # TODO change that to make it realistic
+        self.lot_area = jnp.array([104] * self.n_lots)  # TODO requires meters-squared units; TODO compute directly from config file coordinates
 
         # Store actions information
         self.n_actions = len(self.actions)
@@ -198,7 +199,7 @@ class RootsAndCultureAgent(AgentInterface):
         time_indices = jnp.arange(0, time_horizon)
 
         # Create the model's parameters
-        parameters = self.get_parameters(time_horizon)
+        parameters = self.get_parameters()
 
         # Initialise the states at time zero
         plant_count = jnp.zeros(self.n_lots)
@@ -220,10 +221,9 @@ class RootsAndCultureAgent(AgentInterface):
         # Call the scan function that unroll the model over time
         scan(self.model_dynamic, initial_states, (time_indices, self.policy[:time_horizon], mask))
 
-    def get_parameters(self, time_horizon):
+    def get_parameters(self):
         """
         Getter
-        :param time_horizon: the time horizon of planning
         :return: a dictionary containing the model's parameters
         """
 
@@ -236,21 +236,21 @@ class RootsAndCultureAgent(AgentInterface):
 
         # Retrieve the default parameters
         parameters = {
-            "growth_function_mean": self.get_growth_function_mean(time_horizon),
-            "growth_function_std": self.get_growth_function_std(time_horizon),
-            "max_growth_rate": 0.5,  # TODO change that to make it realistic
-            "evaporation_rate": 0.5,  # TODO change that to make it realistic
-            "soil_type": SoilType.Clays,  # TODO you may want to change that to fit your needs
+            "growth_function_mean": self.get_growth_function_mean(),
+            "growth_function_std": self.get_growth_function_std(),
+            "max_growth_rate": 10,  # units: meters squared per week, TODO change that to make it realistic
+            "evaporation_rate": 5,  # units: liters per square meter per week, TODO change that to make it realistic
+            "soil_type": SoilType.SiltLoams,  # TODO you may want to change that to fit your needs
             "lot_area": self.lot_area,
-            "max_root_depth": 0.5,  # TODO change that to make it realistic
-            "max_evapotranspiration_rate": 0.5,  # TODO change that to make it realistic
-            "yield_potential": 0.5,  # TODO change that to make it realistic
+            "max_root_depth": 0.5,  # units: meters, TODO change that to make it realistic
+            "max_evapotranspiration_rate": 500,  # units: liters per week, TODO change that to make it realistic
+            "yield_potential": 5.78,  # units: kg fresh plant matter per square meter of canopy
             "saturation_points": self.get_saturation_point(),
             "wilting_points": self.get_wilting_point(),
             "soil_organic_matters": self.get_soil_organic_matters(),
             "n_seeds": 84,  # TODO you may want to change that to fit your needs
-            "time_delta": 1,  # TODO change that to make it realistic, it is equal to 1 week and to compute plant size
-            "weekly_irrigation": 2,  # TODO you may want to change that to make it realistic
+            "time_delta": 1,  # units: week, TODO change that to make it realistic, it is equal to 1 week and to compute plant size
+            "weekly_irrigation": 20000,  # units: liters, TODO you may want to change that to make it realistic
             "obs_soil_organic_matter_std": 0.2,  # TODO you may want to change that to make it realistic
             "obs_yield_std": 0.2  # TODO you may want to change that to make it realistic
         }
@@ -277,9 +277,10 @@ class RootsAndCultureAgent(AgentInterface):
         Getter
         :return: a dictionary whose keys are soil types and values are the associated wilting point
         """
+        # provenance:
         # Schwankl, L.J. and T. Prichard. 2009. University of California Drought Management Web Site.
         # http://UCManageDrought.ucdavis.edu. Viewed Aug. 13, 2009.
-        return {  # TODO check that these values are correct
+        return {
             SoilType.VeryCoarseSands: 3.333,
             SoilType.CoarseSands: 6.25,
             SoilType.FineSands: 6.25,
@@ -303,6 +304,9 @@ class RootsAndCultureAgent(AgentInterface):
         Getter
         :return: a dictionary whose keys are soil types and values are the associated saturation point
         """
+        # provenance:
+        # Schwankl, L.J. and T. Prichard. 2009. University of California Drought Management Web Site.
+        # http://UCManageDrought.ucdavis.edu. Viewed Aug. 13, 2009.
         return {  # TODO check that these values are correct
             SoilType.VeryCoarseSands: 6.25,
             SoilType.CoarseSands: 10.416,
@@ -327,43 +331,45 @@ class RootsAndCultureAgent(AgentInterface):
         Getter
         :return: a dictionary whose keys are soil types and values are the associated soil organic matters
         """
+        # provenance:
+        # none
         return {  # TODO change that to make it realistic
-            SoilType.VeryCoarseSands: 2,
-            SoilType.CoarseSands: 2,
-            SoilType.FineSands: 2,
-            SoilType.LoamySands: 2,
-            SoilType.SandyLoams: 2,
-            SoilType.FineSandyLoams: 2,
-            SoilType.VeryFineSandyLoams: 2,
-            SoilType.Loams: 2,
-            SoilType.SiltLoams: 2,
-            SoilType.ClayLoams: 2,
-            SoilType.SiltyClayLoams: 2,
-            SoilType.SandyClayLoams: 2,
-            SoilType.SandyClays: 2,
-            SoilType.SiltyClays: 2,
-            SoilType.Clays: 2
+            SoilType.VeryCoarseSands: 0.9,
+            SoilType.CoarseSands: 2.7,
+            SoilType.FineSands: 3.8,
+            SoilType.LoamySands: 3.9,
+            SoilType.SandyLoams: 4.6,
+            SoilType.FineSandyLoams: 4.8,
+            SoilType.VeryFineSandyLoams: 4.5,
+            SoilType.Loams: 5,
+            SoilType.SiltLoams: 5.5,
+            SoilType.ClayLoams: 6.5,
+            SoilType.SiltyClayLoams: 7.0,
+            SoilType.SandyClayLoams: 5.1,
+            SoilType.SandyClays: 3.5,
+            SoilType.SiltyClays: 2.1,
+            SoilType.Clays: 1.2
         }
 
-    @staticmethod
-    def get_growth_function_mean(time_horizon):
+    def get_growth_function_mean(self):
         """
         Compute the mean of the Gaussian modelling the growth rate over time
-        :param time_horizon: the time horizon of planning
         :return: the mean
         """
         # Inflection points are given by the Gaussian mean plus or minus its standard deviation, thus the mean is:
-        return time_horizon / 2
+        start_time = self.first_time_of(self.index_of("planting"), self.policy)
+        end_time = self.last_time_of(self.index_of("harvesting"), self.policy)
+        return start_time + (end_time - start_time) / 2
 
-    @staticmethod
-    def get_growth_function_std(time_horizon):
+    def get_growth_function_std(self):
         """
         Compute the standard deviation of the Gaussian modelling the growth rate over time
-        :param time_horizon: the time horizon of planning
         :return: the standard deviation
         """
         # Inflection points are given by the Gaussian mean plus or minus its standard deviation (std), thus the std is:
-        return time_horizon / 6
+        start_time = self.first_time_of(self.index_of("planting"), self.policy)
+        end_time = self.last_time_of(self.index_of("harvesting"), self.policy)
+        return (end_time - start_time) / 6
 
     def model_dynamic(self, states_t, values_t):
         """
@@ -431,7 +437,7 @@ class RootsAndCultureAgent(AgentInterface):
 
             # Computed the expected observed yield at time t + 1
             self.compute_yield(
-                plant_count_t1, plant_size_t1, harvest, params["yield_potential"], params["obs_yield_std"], mask
+                plant_count_t, plant_size_t1, harvest, params["yield_potential"], params["obs_yield_std"], mask
             )
 
             # Computed the expected observed soil organic matter at time t + 1
@@ -470,6 +476,39 @@ class RootsAndCultureAgent(AgentInterface):
             return list(self.actions.values()).index(action_name)
 
     @staticmethod
+    @jit
+    def first_time_of(action, actions_performed):
+        """
+        Getter
+        :param action: the action for which the first time index where the action is performed will be returned
+        :param actions_performed: all the performed actions for all time steps
+        :return: the first time index where the action is performed
+        """
+
+        # Create time indices from zero up to the time horizon
+        time_indices = jnp.arange(0, actions_performed.shape[0])
+
+        # Get the first time index where the action is performed
+        is_performed = jnp.squeeze(jnp.any(action + 1 == actions_performed, -1))
+        return jnp.where(is_performed, time_indices, jnp.inf).min()
+
+    @staticmethod
+    @jit
+    def last_time_of(action, actions_performed):
+        """
+        Getter
+        :param action: the action for which the last time index where the action is performed will be returned
+        :param actions_performed: all the performed actions for all time steps
+        :return: the last time index where the action is performed
+        """
+        # Create time indices from zero up to the time horizon
+        time_indices = jnp.arange(0, actions_performed.shape[0])
+
+        # Get the first time index where the action is performed
+        is_performed = jnp.squeeze(jnp.any(action + 1 == actions_performed, -1))
+        return jnp.where(is_performed, time_indices, -jnp.inf).max()
+
+    @staticmethod
     def compute_wilting(
         wilting_t, evapotranspiration_rate_t1, irrigate,
         weekly_irrigation, evaporation_rate, lot_area, saturation_point
@@ -488,7 +527,7 @@ class RootsAndCultureAgent(AgentInterface):
         evaporation_effect = evapotranspiration_rate_t1 + (evaporation_rate * lot_area)
         irrigation_effect = weekly_irrigation * irrigate
         wilting_t1 = wilting_t + irrigation_effect - evaporation_effect
-        return deterministic('wilting', jnp.clip(wilting_t1, a_max=saturation_point))
+        return deterministic("wilting", jnp.clip(wilting_t1, a_max=saturation_point))
 
     @staticmethod
     def compute_soil_water_status(wilting_t1, wilting_point, saturation_point):
@@ -500,7 +539,7 @@ class RootsAndCultureAgent(AgentInterface):
         :return: the soil water status at time t + 1
         """
         soil_water_status_t1 = (wilting_t1 - wilting_point) / (saturation_point - wilting_point)
-        return deterministic('soil_water_status', jnp.clip(soil_water_status_t1, a_min=0, a_max=1))
+        return deterministic("soil_water_status", jnp.clip(soil_water_status_t1, a_min=0, a_max=1))
 
     @staticmethod
     def compute_soil_organic_matter(soil_organic_matter_t, plant_size_t, plant_count_t, lot_area, prune, fertilize):
@@ -529,7 +568,7 @@ class RootsAndCultureAgent(AgentInterface):
         both_effect = (plant_count_t * plant_size_t * 0.04) / lot_area
         soil_organic_matter_t1 = soil_organic_matter_t1 + both_effect * soil_organic_matter_t * prune_and_fertilize
 
-        return deterministic('soil_organic_matter', soil_organic_matter_t1)
+        return deterministic("soil_organic_matter", soil_organic_matter_t1)
 
     @staticmethod
     def compute_plant_size(plant_count_t, plant_count_t1, plant_size_t, growth_rate_t, pruning, time_delta):
@@ -557,7 +596,7 @@ class RootsAndCultureAgent(AgentInterface):
         # Apply the immediate reduction in plant size due to the effect of pruning
         pruning_effect = 1 + 0.1 * pruning
         plant_size_t1 = plant_size_t1 + plant_size_t1 * growth_rate_t * time_delta * pruning_effect
-        return deterministic('plant_size', plant_size_t1)
+        return deterministic("plant_size", plant_size_t1)
 
     @staticmethod
     def compute_growth_rate(
@@ -580,8 +619,7 @@ class RootsAndCultureAgent(AgentInterface):
         # Compute the growth rate at time t + 1
         growth_rate_t1 = norm.pdf(t + 1, loc=growth_function_mean, scale=growth_function_std)
         growth_rate_t1 = growth_rate_t1 * soil_water_status_t1 * fertiliser_effect
-
-        return deterministic('growth_rate', jnp.clip(growth_rate_t1, a_min=0, a_max=max_growth_rate))
+        return deterministic("growth_rate", jnp.clip(growth_rate_t1, a_min=0, a_max=max_growth_rate))
 
     @staticmethod
     def compute_evapotranspiration_rate(plant_count_t1, plant_size_t, plant_size_t1, max_evapotranspiration_rate):
@@ -599,7 +637,7 @@ class RootsAndCultureAgent(AgentInterface):
 
         # Compute the evapotranspiration rate at time t + 1
         evapotranspiration_rate_t1 = plant_count_t1 * average_plant_size * max_evapotranspiration_rate
-        return deterministic('evapotranspiration_rate', evapotranspiration_rate_t1)
+        return deterministic("evapotranspiration_rate", evapotranspiration_rate_t1)
 
     @staticmethod
     def compute_plant_count(plant_count_t, plant, harvest, n_seeds):
@@ -611,7 +649,7 @@ class RootsAndCultureAgent(AgentInterface):
         :param n_seeds: the number of plant
         :return: the plant count at time t + 1
         """
-        return deterministic('plant_count', (plant_count_t + plant * n_seeds) * (1 - harvest))
+        return deterministic("plant_count", (plant_count_t + plant * n_seeds) * (1 - harvest))
 
     @staticmethod
     def compute_yield(plant_count, plant_size, harvest, yield_potential, obs_yield_std, mask):
@@ -630,12 +668,12 @@ class RootsAndCultureAgent(AgentInterface):
         yield_mask = RootsAndCultureAgent.get_mask(mask, 'obs_yield')
 
         # Create the yield distribution
-        obs_yield_mean = plant_count * plant_size * yield_potential * (1 - harvest)
+        obs_yield_mean = jnp.clip(plant_count * plant_size * yield_potential, a_min=0) * harvest
         obs_yield_scale = obs_yield_std * harvest + 1e-10
         yield_distribution = Normal(obs_yield_mean, obs_yield_scale).mask(yield_mask)
 
         # Sample from the yield distribution
-        return sample('obs_yield', yield_distribution)
+        return sample("obs_yield", yield_distribution)
 
     @staticmethod
     def compute_obs_soil_organic_matter(soil_organic_matter_t1, obs_soil_organic_matter_std, mask):
@@ -655,7 +693,7 @@ class RootsAndCultureAgent(AgentInterface):
         som_distribution = som_distribution.mask(soil_organic_matter_mask)
 
         # Sample from the soil organic matter distribution
-        return sample('obs_soil_organic_matter', som_distribution)
+        return sample("obs_soil_organic_matter", som_distribution)
 
     @staticmethod
     def get_mask(mask, obs_name):
