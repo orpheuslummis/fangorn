@@ -405,7 +405,7 @@ class RootsAndCultureAgent(AgentInterface):
 
             # Compute the plant size at time t + 1
             plant_size_t1 = self.compute_plant_size(
-                plant_count_t,  plant_count_t1, plant_size_t, growth_rate_t, prune, params["time_delta"]
+                plant_count_t,  plant_count_t1, plant_size_t, growth_rate_t, prune, harvest, params["time_delta"]
             )
 
             # Compute the soil organic matter at time t + 1
@@ -571,7 +571,7 @@ class RootsAndCultureAgent(AgentInterface):
         return deterministic("soil_organic_matter", soil_organic_matter_t1)
 
     @staticmethod
-    def compute_plant_size(plant_count_t, plant_count_t1, plant_size_t, growth_rate_t, pruning, time_delta):
+    def compute_plant_size(plant_count_t, plant_count_t1, plant_size_t, growth_rate_t, pruning, harvesting, time_delta):
         """
         Compute the plant size at time t + 1
         :param plant_count_t: the plant count at time t
@@ -579,23 +579,27 @@ class RootsAndCultureAgent(AgentInterface):
         :param plant_size_t: the plant size at time t
         :param growth_rate_t: the growth rate at time t
         :param pruning: whether pruning is performed
+        :param harvesting: whether harvesting is performed
         :param time_delta: the real-life duration between two time steps modeled by the agent
         :return: the plant size at time t + 1
         """
 
-        # Apply the immediate reduction in plant size caused by pruning
+        # Compute the new average plant size based on the number of previously present plants and newly planted seeds
         initial_planting_size = 0.1
-        n_seeds_planted = jnp.clip(plant_count_t1 - plant_count_t, a_min=0)
-        total_plant_count = jnp.clip(plant_count_t1, a_min=1)
+        n_seeds_planted = jnp.clip(plant_count_t1 - plant_count_t, a_min=0.0)
+        total_plant_count = jnp.clip(plant_count_t, a_min=1.0)
         plant_size_t1 = (plant_size_t * plant_count_t + initial_planting_size * n_seeds_planted) / total_plant_count
 
         # Apply the immediate reduction in plant size caused by pruning
         pruning_effect = 1 - 0.2 * pruning
         plant_size_t1 = plant_size_t1 * pruning_effect
 
-        # Apply the immediate reduction in plant size due to the effect of pruning
+        # Compute the immediate increase in plant size due to pruning
         pruning_effect = 1 + 0.1 * pruning
         plant_size_t1 = plant_size_t1 + plant_size_t1 * growth_rate_t * time_delta * pruning_effect
+
+        # Reset the plant size to zero after harvesting
+        plant_size_t1 = jnp.where(harvesting, jnp.zeros_like(plant_size_t1), plant_size_t1)
         return deterministic("plant_size", plant_size_t1)
 
     @staticmethod
