@@ -437,7 +437,7 @@ class RootsAndCultureAgent(AgentInterface):
 
             # Computed the expected observed yield at time t + 1
             self.compute_yield(
-                plant_count_t, plant_size_t1, harvest, params["yield_potential"], params["obs_yield_std"], mask
+                plant_count_t, plant_size_t, harvest, params["yield_potential"], params["obs_yield_std"], mask
             )
 
             # Computed the expected observed soil organic matter at time t + 1
