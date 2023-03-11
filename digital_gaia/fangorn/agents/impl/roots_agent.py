@@ -266,8 +266,8 @@ class RootsAndCultureAgent(AgentInterface):
         m3_to_l = 1000
 
         # Compute lot saturation and wilting points
-        parameters["saturation_point"] = soil_volume * parameters["saturation_points"][soil_type]/100 * m3_to_l
-        parameters["wilting_point"] = soil_volume * parameters["wilting_points"][soil_type]/100 * m3_to_l
+        parameters["saturation_point"] = soil_volume * parameters["saturation_points"][soil_type] / 100 * m3_to_l
+        parameters["wilting_point"] = soil_volume * parameters["wilting_points"][soil_type] / 100 * m3_to_l
 
         return parameters
 
