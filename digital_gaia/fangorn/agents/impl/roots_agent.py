@@ -275,7 +275,7 @@ class RootsAndCultureAgent(AgentInterface):
     def get_wilting_point():
         """
         Getter
-        :return: a dictionary whose keys are soil types and % values are the associated wilting point
+        :return: a dictionary whose keys are soil types and values are the associated wilting point in percentage
         """
         # provenance:
         # Schwankl, L.J. and T. Prichard. 2009. University of California Drought Management Web Site.
@@ -302,7 +302,7 @@ class RootsAndCultureAgent(AgentInterface):
     def get_saturation_point():
         """
         Getter
-        :return: a dictionary whose keys are soil types and % values are the associated saturation point
+        :return: a dictionary whose keys are soil types and values are the associated saturation point in percentage
         """
         # provenance:
         # Schwankl, L.J. and T. Prichard. 2009. University of California Drought Management Web Site.
