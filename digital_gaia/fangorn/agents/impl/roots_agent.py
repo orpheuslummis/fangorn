@@ -238,19 +238,19 @@ class RootsAndCultureAgent(AgentInterface):
         parameters = {
             "growth_function_mean": self.get_growth_function_mean(),
             "growth_function_std": self.get_growth_function_std(),
-            "max_growth_rate": 10,  # units: meters squared per week, TODO change that to make it realistic
-            "evaporation_rate": 5,  # units: liters per square meter per week, TODO change that to make it realistic
+            "max_growth_rate": 0.5,  # units: meters squared per week, TODO change that to make it realistic, 1
+            "evaporation_rate": 0.05,  # units: liters per square meter per week, TODO change that to make it realistic, 5
             "soil_type": SoilType.SiltLoams,  # TODO you may want to change that to fit your needs
             "lot_area": self.lot_area,
             "max_root_depth": 0.5,  # units: meters, TODO change that to make it realistic
-            "max_evapotranspiration_rate": 500,  # units: liters per week, TODO change that to make it realistic
+            "max_evapotranspiration_rate": 1,  # units: liters per week, TODO change that to make it realistic, 10
             "yield_potential": 5.78,  # units: kg fresh plant matter per square meter of canopy
             "saturation_points": self.get_saturation_point(),
             "wilting_points": self.get_wilting_point(),
             "soil_organic_matters": self.get_soil_organic_matters(),
             "n_seeds": 84,  # TODO you may want to change that to fit your needs
             "time_delta": 1,  # units: week, TODO change that to make it realistic, it is equal to 1 week and to compute plant size
-            "weekly_irrigation": 20000,  # units: liters, TODO you may want to change that to make it realistic
+            "weekly_irrigation": 1500,  # units: liters, TODO you may want to change that to make it realistic, 8000
             "obs_soil_organic_matter_std": 0.2,  # TODO you may want to change that to make it realistic
             "obs_yield_std": 0.2  # TODO you may want to change that to make it realistic
         }
@@ -266,8 +266,8 @@ class RootsAndCultureAgent(AgentInterface):
         m3_to_l = 1000
 
         # Compute lot saturation and wilting points
-        parameters["saturation_point"] = soil_volume * parameters["saturation_points"][soil_type] * m3_to_l
-        parameters["wilting_point"] = soil_volume * parameters["wilting_points"][soil_type] * m3_to_l
+        parameters["saturation_point"] = soil_volume * parameters["saturation_points"][soil_type] / 100 * m3_to_l
+        parameters["wilting_point"] = soil_volume * parameters["wilting_points"][soil_type] / 100 * m3_to_l
 
         return parameters
 
@@ -275,7 +275,7 @@ class RootsAndCultureAgent(AgentInterface):
     def get_wilting_point():
         """
         Getter
-        :return: a dictionary whose keys are soil types and values are the associated wilting point
+        :return: a dictionary whose keys are soil types and values are the associated wilting point in percentage
         """
         # provenance:
         # Schwankl, L.J. and T. Prichard. 2009. University of California Drought Management Web Site.
@@ -302,7 +302,7 @@ class RootsAndCultureAgent(AgentInterface):
     def get_saturation_point():
         """
         Getter
-        :return: a dictionary whose keys are soil types and values are the associated saturation point
+        :return: a dictionary whose keys are soil types and values are the associated saturation point in percentage
         """
         # provenance:
         # Schwankl, L.J. and T. Prichard. 2009. University of California Drought Management Web Site.
@@ -437,7 +437,7 @@ class RootsAndCultureAgent(AgentInterface):
 
             # Computed the expected observed yield at time t + 1
             self.compute_yield(
-                plant_count_t, plant_size_t1, harvest, params["yield_potential"], params["obs_yield_std"], mask
+                plant_count_t, plant_size_t, harvest, params["yield_potential"], params["obs_yield_std"], mask
             )
 
             # Computed the expected observed soil organic matter at time t + 1
