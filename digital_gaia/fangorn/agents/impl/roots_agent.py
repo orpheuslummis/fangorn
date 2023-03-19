@@ -51,9 +51,7 @@ class SoilOrganicMatter(IntEnum):
 
 class RootsAndCultureAgent(AgentInterface):
     """
-    # TODO is that correct?
-    # TODO is there a better way to describe it?
-    A class implementing an agent specialised for roots and culture.
+    A class implementing an agent specialised for Roots & Culture farm.
     """
 
     # The agent's species
@@ -65,8 +63,8 @@ class RootsAndCultureAgent(AgentInterface):
     actions = {
         "planting": AgentInterface.ontology_name(PlantingSeeds, "HempSeeds"),
         "harvesting": AgentInterface.ontology_name(HarvestCrops, "Hemp"),
-        "fertilizer": AgentInterface.ontology_name(PruneCrops, "Yes"),
-        "pruning": AgentInterface.ontology_name(FertilizeSoil, "Yes"),
+        "pruning": AgentInterface.ontology_name(PruneCrops, "Yes"),
+        "fertilizer": AgentInterface.ontology_name(FertilizeSoil, "Yes"),
         "irrigation": AgentInterface.ontology_name(IrrigateCrops, "Yes")
     }
 
@@ -88,7 +86,7 @@ class RootsAndCultureAgent(AgentInterface):
         # Store lot information
         self.n_lots = len(self.data.project.lots)
         # TODO this should be computed based on the polygon coordinates
-        self.lot_area = jnp.array([104] * self.n_lots)  # TODO requires meters-squared units; TODO compute directly from config file coordinates
+        self.lot_area = jnp.array([104] * self.n_lots)  # units of m^2; TODO compute directly from config file coordinates
 
         # Store actions information
         self.n_actions = len(self.actions)
@@ -171,7 +169,6 @@ class RootsAndCultureAgent(AgentInterface):
             elif isinstance(measurement, list):
                 n_reports += len(measurement)
 
-        # Divide the total number of measurement by the number of lots
         return int(n_reports)
 
     def guide(self, *args, **kwargs):
@@ -192,7 +189,7 @@ class RootsAndCultureAgent(AgentInterface):
         :param kwargs: unused keyword arguments
         """
 
-        # Make sure the time horizon is value
+        # Make sure the time horizon is valid
         time_horizon = len(self.policy) if time_horizon == -1 else time_horizon
 
         # Create time indices from zero up to the time horizon
@@ -227,32 +224,27 @@ class RootsAndCultureAgent(AgentInterface):
         :return: a dictionary containing the model's parameters
         """
 
-        # TODO is there some uncertainty about the parameters?
-
-        # TODO is there a need for different parameters for different lots?
-        #  For example, different soil_types/max_root_depth/etc... in different lots
-        # with plate('num_lots', self.n_lots):
-        #     parameters['key'] = sample('key', Normal(0, 1))
+        # TODO add uncertainty to some parameters, as needed
 
         # Retrieve the default parameters
         parameters = {
             "growth_function_mean": self.get_growth_function_mean(),
             "growth_function_std": self.get_growth_function_std(),
-            "max_growth_rate": 10,  # units: meters squared per week, TODO change that to make it realistic
-            "evaporation_rate": 5,  # units: liters per square meter per week, TODO change that to make it realistic
-            "soil_type": SoilType.SiltLoams,  # TODO you may want to change that to fit your needs
-            "lot_area": self.lot_area,
-            "max_root_depth": 0.5,  # units: meters, TODO change that to make it realistic
-            "max_evapotranspiration_rate": 500,  # units: liters per week, TODO change that to make it realistic
-            "yield_potential": 5.78,  # units: kg fresh plant matter per square meter of canopy
+            "max_growth_rate": 0.5,  # units: meters squared per week
+            "evaporation_rate": 0.05,  # units: liters per square meter per week
+            "soil_type": SoilType.SiltLoams,  # TODO you may want to change this to fit the plot
+            "lot_area": self.lot_area, # TODO you may want to change this to fit the plot
+            "max_root_depth": 0.5,  # units: meters; TODO you may want to change this to fit the plot
+            "max_evapotranspiration_rate": 1,  # units: liters per week
+            "yield_potential": 5.78,  # units: kg fresh plant matter per square meter of canopy; TODO you may want to change this to fit the genetics
             "saturation_points": self.get_saturation_point(),
             "wilting_points": self.get_wilting_point(),
             "soil_organic_matters": self.get_soil_organic_matters(),
-            "n_seeds": 84,  # TODO you may want to change that to fit your needs
-            "time_delta": 1,  # units: week, TODO change that to make it realistic, it is equal to 1 week and to compute plant size
-            "weekly_irrigation": 20000,  # units: liters, TODO you may want to change that to make it realistic
-            "obs_soil_organic_matter_std": 0.2,  # TODO you may want to change that to make it realistic
-            "obs_yield_std": 0.2  # TODO you may want to change that to make it realistic
+            "n_seeds": 84,  # TODO you may want to change this to fit the plot
+            "time_delta": 1,  # units: week
+            "weekly_irrigation": 1500,  # units: liters; TODO you may want to change this to fit the plot
+            "obs_soil_organic_matter_std": 0.2,  # TODO you may want to change this to fit the plot
+            "obs_yield_std": 0.2  # TODO you may want to change this to fit the plot
         }
 
         # Get the soil type and soil volume
@@ -266,8 +258,8 @@ class RootsAndCultureAgent(AgentInterface):
         m3_to_l = 1000
 
         # Compute lot saturation and wilting points
-        parameters["saturation_point"] = soil_volume * parameters["saturation_points"][soil_type] * m3_to_l
-        parameters["wilting_point"] = soil_volume * parameters["wilting_points"][soil_type] * m3_to_l
+        parameters["saturation_point"] = soil_volume * parameters["saturation_points"][soil_type] / 100 * m3_to_l
+        parameters["wilting_point"] = soil_volume * parameters["wilting_points"][soil_type] / 100 * m3_to_l
 
         return parameters
 
@@ -275,7 +267,7 @@ class RootsAndCultureAgent(AgentInterface):
     def get_wilting_point():
         """
         Getter
-        :return: a dictionary whose keys are soil types and values are the associated wilting point
+        :return: a dictionary whose keys are soil types and values are the associated wilting point in percentage
         """
         # provenance:
         # Schwankl, L.J. and T. Prichard. 2009. University of California Drought Management Web Site.
@@ -302,12 +294,12 @@ class RootsAndCultureAgent(AgentInterface):
     def get_saturation_point():
         """
         Getter
-        :return: a dictionary whose keys are soil types and values are the associated saturation point
+        :return: a dictionary whose keys are soil types and values are the associated saturation point in percentage
         """
         # provenance:
         # Schwankl, L.J. and T. Prichard. 2009. University of California Drought Management Web Site.
         # http://UCManageDrought.ucdavis.edu. Viewed Aug. 13, 2009.
-        return {  # TODO check that these values are correct
+        return {
             SoilType.VeryCoarseSands: 6.25,
             SoilType.CoarseSands: 10.416,
             SoilType.FineSands: 10.416,
@@ -333,7 +325,7 @@ class RootsAndCultureAgent(AgentInterface):
         """
         # provenance:
         # none
-        return {  # TODO change that to make it realistic
+        return {
             SoilType.VeryCoarseSands: 0.9,
             SoilType.CoarseSands: 2.7,
             SoilType.FineSands: 3.8,
@@ -405,7 +397,7 @@ class RootsAndCultureAgent(AgentInterface):
 
             # Compute the plant size at time t + 1
             plant_size_t1 = self.compute_plant_size(
-                plant_count_t,  plant_count_t1, plant_size_t, growth_rate_t, prune, params["time_delta"]
+                plant_count_t,  plant_count_t1, plant_size_t, growth_rate_t, prune, harvest, params["time_delta"]
             )
 
             # Compute the soil organic matter at time t + 1
@@ -418,7 +410,7 @@ class RootsAndCultureAgent(AgentInterface):
                 plant_count_t1, plant_size_t, plant_size_t1, params["max_evapotranspiration_rate"]
             )
 
-            # Compute the soil water status at time t + 1
+            # Compute the wilting at time t + 1
             wilting_t1 = self.compute_wilting(
                 wilting_t, evapotranspiration_rate_t1, irrigate,
                 params["weekly_irrigation"], params["evaporation_rate"], params["lot_area"], params["saturation_point"]
@@ -437,7 +429,7 @@ class RootsAndCultureAgent(AgentInterface):
 
             # Computed the expected observed yield at time t + 1
             self.compute_yield(
-                plant_count_t, plant_size_t1, harvest, params["yield_potential"], params["obs_yield_std"], mask
+                plant_count_t, plant_size_t, harvest, params["yield_potential"], params["obs_yield_std"], mask
             )
 
             # Computed the expected observed soil organic matter at time t + 1
@@ -516,7 +508,7 @@ class RootsAndCultureAgent(AgentInterface):
         """
         Computed the wilting at time t + 1
         :param wilting_t: the wilting at time t
-        :param evapotranspiration_rate_t1: the soil organic matter at time t + 1
+        :param evapotranspiration_rate_t1: the evapotranspiration rate at time t + 1
         :param irrigate: whether irrigation is performed
         :param weekly_irrigation: the quantity of water used while irrigating
         :param evaporation_rate: a constant representing the evaporation rate
@@ -534,8 +526,8 @@ class RootsAndCultureAgent(AgentInterface):
         """
         Computed the soil water status at time t + 1
         :param wilting_t1: the wilting at time t + 1
-        :param wilting_point: the soil organic matter at time t + 1
-        :param saturation_point: a constant representing the evaporation rate
+        :param wilting_point: the soil's wilting point
+        :param saturation_point: the soil's saturation point
         :return: the soil water status at time t + 1
         """
         soil_water_status_t1 = (wilting_t1 - wilting_point) / (saturation_point - wilting_point)
@@ -571,7 +563,7 @@ class RootsAndCultureAgent(AgentInterface):
         return deterministic("soil_organic_matter", soil_organic_matter_t1)
 
     @staticmethod
-    def compute_plant_size(plant_count_t, plant_count_t1, plant_size_t, growth_rate_t, pruning, time_delta):
+    def compute_plant_size(plant_count_t, plant_count_t1, plant_size_t, growth_rate_t, pruning, harvesting, time_delta):
         """
         Compute the plant size at time t + 1
         :param plant_count_t: the plant count at time t
@@ -579,23 +571,27 @@ class RootsAndCultureAgent(AgentInterface):
         :param plant_size_t: the plant size at time t
         :param growth_rate_t: the growth rate at time t
         :param pruning: whether pruning is performed
+        :param harvesting: whether harvesting is performed
         :param time_delta: the real-life duration between two time steps modeled by the agent
         :return: the plant size at time t + 1
         """
 
-        # Apply the immediate reduction in plant size caused by pruning
+        # Compute the new average plant size based on the number of previously present plants and newly planted seeds
         initial_planting_size = 0.1
-        n_seeds_planted = jnp.clip(plant_count_t1 - plant_count_t, a_min=0)
-        total_plant_count = jnp.clip(plant_count_t1, a_min=1)
+        n_seeds_planted = jnp.clip(plant_count_t1 - plant_count_t, a_min=0.0)
+        total_plant_count = jnp.clip(plant_count_t, a_min=1.0)
         plant_size_t1 = (plant_size_t * plant_count_t + initial_planting_size * n_seeds_planted) / total_plant_count
 
         # Apply the immediate reduction in plant size caused by pruning
         pruning_effect = 1 - 0.2 * pruning
         plant_size_t1 = plant_size_t1 * pruning_effect
 
-        # Apply the immediate reduction in plant size due to the effect of pruning
+        # Compute the immediate increase in plant size due to pruning
         pruning_effect = 1 + 0.1 * pruning
         plant_size_t1 = plant_size_t1 + plant_size_t1 * growth_rate_t * time_delta * pruning_effect
+
+        # Reset the plant size to zero after harvesting
+        plant_size_t1 = jnp.where(harvesting, jnp.zeros_like(plant_size_t1), plant_size_t1)
         return deterministic("plant_size", plant_size_t1)
 
     @staticmethod
@@ -646,7 +642,7 @@ class RootsAndCultureAgent(AgentInterface):
         :param plant_count_t: the plant count at time t
         :param plant: whether planting is performed
         :param harvest: whether harvesting is performed
-        :param n_seeds: the number of plant
+        :param n_seeds: the number of seeds planted when plant is True
         :return: the plant count at time t + 1
         """
         return deterministic("plant_count", (plant_count_t + plant * n_seeds) * (1 - harvest))

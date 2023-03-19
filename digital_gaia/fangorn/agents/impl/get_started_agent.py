@@ -152,7 +152,7 @@ class GetStartedAgent(AgentInterface):
         else:
             return list(self.actions.values()).index(action_name)
 
-    def model_dynamic(self, states_t, actions_performed):  # TODO update in notebook
+    def model_dynamic(self, states_t, actions_performed):
         """
         Implement the model dynamic
         :param states_t: the state of the lot at time t
@@ -181,7 +181,7 @@ class GetStartedAgent(AgentInterface):
 
         return (hemp_size_t1, hemp_can_grow_t1, hemp_growth_rate), None
 
-    def model(self, *args, time_horizon=-1, **kwargs):  # TODO update in notebook
+    def model(self, *args, time_horizon=-1, **kwargs):
         """
         The generative model of the agent
         :param args: unused positional arguments

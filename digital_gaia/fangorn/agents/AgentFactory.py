@@ -29,7 +29,7 @@ class AgentFactory:
             class_name = file[:-3]
             class_module = __import__(package + class_name, fromlist=[class_name])
 
-            # Get the frames' class
+            # Get the module's classes
             module_dict = class_module.__dict__
             for obj in module_dict:
                 if isinstance(module_dict[obj], type) and module_dict[obj].__module__ == class_module.__name__:
