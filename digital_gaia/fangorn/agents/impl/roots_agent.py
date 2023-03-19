@@ -51,7 +51,7 @@ class SoilOrganicMatter(IntEnum):
 
 class RootsAndCultureAgent(AgentInterface):
     """
-    A class implementing an agent specialised for Roots & Culture farm
+    A class implementing an agent specialised for Roots & Culture farm.
     """
 
     # The agent's species
@@ -226,9 +226,6 @@ class RootsAndCultureAgent(AgentInterface):
 
         # TODO add uncertainty to some parameters, as needed
 
-        # with plate('num_lots', self.n_lots):
-        #     parameters['key'] = sample('key', Normal(0, 1))
-
         # Retrieve the default parameters
         parameters = {
             "growth_function_mean": self.get_growth_function_mean(),
@@ -302,7 +299,7 @@ class RootsAndCultureAgent(AgentInterface):
         # provenance:
         # Schwankl, L.J. and T. Prichard. 2009. University of California Drought Management Web Site.
         # http://UCManageDrought.ucdavis.edu. Viewed Aug. 13, 2009.
-        return {  # TODO check that these values are correct
+        return {
             SoilType.VeryCoarseSands: 6.25,
             SoilType.CoarseSands: 10.416,
             SoilType.FineSands: 10.416,
@@ -328,7 +325,7 @@ class RootsAndCultureAgent(AgentInterface):
         """
         # provenance:
         # none
-        return {  # TODO change that to make it realistic
+        return {
             SoilType.VeryCoarseSands: 0.9,
             SoilType.CoarseSands: 2.7,
             SoilType.FineSands: 3.8,
