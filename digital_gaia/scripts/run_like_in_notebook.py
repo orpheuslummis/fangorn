@@ -7,10 +7,8 @@ from numpyro.infer import Trace_ELBO
 import optax
 from numpyro import set_platform
 
-# Retrieve the fangorn directory
+# Import required classes from the fangorn package
 import digital_gaia.fangorn as fangorn
-
-# Import required classes from the natural_models package
 from digital_gaia.fangorn.agents.AgentFactory import AgentFactory
 from digital_gaia.fangorn.assessment.DataLoader import DataLoader
 from digital_gaia.fangorn.kernels.impl.MCMCKernel import MCMCKernel
@@ -96,7 +94,6 @@ def run_like_in_notebook():
     # Perform inference using MCMC
     inference_args = {
         "mask": mask,
-        "data_level": 0
     }
     mcmc_samples = mcmc_algorithm.run_inference(inference_args=inference_args)
 
