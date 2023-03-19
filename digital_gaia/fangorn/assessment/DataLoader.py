@@ -49,7 +49,7 @@ class DataLoader:
 
     def load_policies(self):
         """
-        Load the policies from the file system
+        Load the project's policies
         :return: the loaded policies
         """
 
