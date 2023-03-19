@@ -12,7 +12,7 @@ class Engine:
 
     def __init__(self, verbose=False, debug=False):
         """
-        Construct the assessment engine
+        Construct the assessment fangorn
         :param verbose: True if useful information should be displayed, False otherwise
         :param debug: True if debug information should be displayed, False otherwise
         """
