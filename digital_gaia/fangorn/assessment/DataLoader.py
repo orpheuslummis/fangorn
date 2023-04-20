@@ -158,8 +158,7 @@ class DataLoader:
         :param report_dir: the directory to scoot for report files
         :return: the report files
         """
-        files = [report_dir / file for file in report_dir.iterdir() if (report_dir / file).exists()]
-        return filter(lambda file: file is not None, sorted(files))
+        return [file for file in report_dir.iterdir() if file.is_file()]
 
     @staticmethod
     def display_reports(reports):
